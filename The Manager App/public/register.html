@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css">
+  <title>Register</title>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Registration</h2>
+    <div class="message" id="registerMessage"></div>
+    <form id="registerForm">
+  <label for="username">Full Name</label>
+  <input type="text" id="username" name="username" required />
+
+  <label for="email">Email</label>
+  <input type="email" id="email" name="email" required />
+
+  <label for="password">Password</label>
+  <input type="password" id="password" name="password" required />
+
+  <label for="retype_password">Retype Password</label>
+  <input type="password" id="retype_password" name="retype_password" required />
+  <button class="btn-register" type="submit">Register</button>
+    </form>
+</div>
+
+ <div class="form-container-1">
+      <p>Already have an account? <br/>
+         Log In
+        </p>
+      <a class="login" href="login.html">Sign In</a>
+  </div>
+
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const retype_password = document.getElementById('retype_password').value;
+
+      const msgEl = document.getElementById('registerMessage');
+
+      try {
+        const resp = await fetch('http://localhost:300/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, password, retype_password })
+        });
+        const data = await resp.json();
+        if (resp.status === 201) {
+          msgEl.style.color = 'green';
+          msgEl.innerText = data.message;
+          setTimeout(() => {
+            window.location.href = 'login.html';
+          }, 1500);
+        } else {
+          msgEl.style.color = 'red';
+          msgEl.innerText = data.message;
+        }
+      } catch (err) {
+        msgEl.style.color = 'red';
+        msgEl.innerText = 'Error: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

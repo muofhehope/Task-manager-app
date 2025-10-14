@@ -1,0 +1,148 @@
+* {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+
+}
+
+body {
+  background: #e0dfdf;
+  max-width: 70%;
+  margin: 0 auto; 
+}
+
+
+.form-container {
+  max-width: 400px;
+  margin: 60px auto;
+  padding: 30px;
+  background: rgb(247, 242, 242);
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+}
+
+
+.form-container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+input:focus {
+  border-color: #e3e7e9;
+  outline: none;
+}
+
+
+button {
+  width: 100%;
+  padding: 12px;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button.btn:hover {
+  background-color: #677f94;
+}
+
+.btn-login {
+  background-color: #4c3a69;
+}
+
+.btn-register {
+  background-color: rgb(141, 43, 56);
+}
+
+.btn-addtask {
+  background-color: #052796;
+  max-width: 60%;
+  margin: 0 auto;
+} 
+
+#logoutBtn {
+  background-color: rgb(172, 51, 107);
+  float: right;
+  max-width: 20%;
+  padding: 5px 5px;
+}
+
+h3 {
+margin-top: 70px;
+}
+
+
+.message {
+  margin-bottom: 15px;
+  font-weight: bold;
+  text-align: center;
+}
+
+
+.form-container-1 {
+  max-width: 400px;
+  margin: 20px auto;
+  padding: 15px;
+  text-align: center;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+}
+
+.form-container-1 p {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+a.login {
+  color: #146da1;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+a.login:hover {
+  text-decoration: underline;
+}
+
+input, textarea, button {
+  display: block;
+  margin: 10px 0;
+  padding: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+button {
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #444246;
+}
+
+
+
+
+
+
