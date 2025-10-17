@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="form-container">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required />
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required />
+
+      <button class="btn" type="submit" id="loginBtn">Login</button>
+
+      <div id="loginMessage"></div>
+    </form>
+
+    <p>Don't have an account?<br />
+      <a class="login" href="register.html">Register</a>
+    </p>
+  </div>
+
+<script>
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const msgEl = document.getElementById('loginMessage');
+    const loginBtn = document.getElementById('loginBtn');
+
+    msgEl.innerText = '';
+    msgEl.style.color = '';
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Logging in...';
+
+    try {
+      const resp = await fetch('http://localhost:3001/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }, 
+        credentials: 'include', 
+        body: JSON.stringify({ email, password }),
+      });
+
+      const contentType = resp.headers.get('Content-Type');
+      let data;
+
+      if (contentType && contentType.includes('application/json')) {
+        data = await resp.json();
+      } else {
+        const text = await resp.text();
+        throw new Error(text);
+      }
+
+      if (!resp.ok) {
+        msgEl.style.color = 'red';
+        msgEl.innerText = data.message || 'Login failed';
+      } else {
+        msgEl.style.color = 'green';
+        msgEl.innerText = data.message || 'Login successful';
+
+        // Store token & user info for future requests
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('username', data.username || '');
+        localStorage.setItem('email', data.email || '');
+        localStorage.setItem('role', data.is_admin === 1 ? 'admin' : 'user');
+
+        // Redirect user after a short delay
+        setTimeout(() => {
+          if (data.is_admin === 1) {
+            window.location.href = 'admin.html';
+          } else {
+            window.location.href = 'dashboard.html';
+          }
+        }, 500);
+      }
+
+      console.log('Login response:', data);
+    } catch (err) {
+      msgEl.style.color = 'red';
+      msgEl.innerText = err.message || 'Something went wrong.';
+    } finally {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Login';
+    }
+  });
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const msgEl = document.getElementById('loginMessage');
+      const loginBtn = document.getElementById('loginBtn');
+
+      // Clear previous message
+      msgEl.innerText = '';
+      msgEl.style.color = '';
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Logging in...';
+
+      try {
+        const resp = await fetch('http://localhost:3000/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const contentType = resp.headers.get('Content-Type');
+        let data;
+
+        if (contentType && contentType.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          const text = await resp.text();
+          throw new Error(text);
+        }
+
+        if (!resp.ok) {
+          msgEl.style.color = 'red';
+          msgEl.innerText = data.message || 'Login failed';
+        } else {
+          // Success
+          msgEl.style.color = 'green';
+          msgEl.innerText = data.message || 'Login successful';
+
+          // Store token & user info
+          localStorage.setItem('token', data.token);
+          if (data.username) localStorage.setItem('username', data.username);
+          if (data.email) localStorage.setItem('email', data.email);
+
+          // Redirect to dashboard
+          setTimeout(() => {
+            window.location.href = 'dashboard.html';
+          }, 500);
+        }
+      } catch (err) {
+        msgEl.style.color = 'red';
+        msgEl.innerText = err.message || 'Something went wrong.';
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Login';
+      }
+    });
+  </script> -->
+
+
+
+
