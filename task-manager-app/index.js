@@ -10,10 +10,12 @@ import cors from 'cors';
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: 'http://localhost:3001', 
-  credentials: true
+  origin: ['http://localhost:5500', 'http://127.0.0.1:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],     
+  allowedHeaders: ['Content-Type', 'Authorization'],       
+  preflightContinue: false,                                
+  optionsSuccessStatus: 204
 }));
-
 
 const PORT = process.env.PORT;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -21,8 +23,6 @@ if (!JWT_SECRET) {
   console.error('FATAL: JWT_SECRET is not set in .env');
   process.exit(1);
 }
-
-
 
 const db = mysql.createPool({
   host: process.env.DB_HOST,
@@ -44,7 +44,7 @@ const db = mysql.createPool({
 // Middleware 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
-    console.log('Authorization Header:', authHeader);
+  console.log('Authorization Header:', authHeader);
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
@@ -52,7 +52,7 @@ function authenticateToken(req, res, next) {
     return res.sendStatus(401);
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
       console.log('Invalid token:', err.message);
       return res.sendStatus(403);
@@ -62,8 +62,6 @@ function authenticateToken(req, res, next) {
     next();
   });
 }
-
-
 
 // AUTH
 
@@ -101,12 +99,10 @@ app.post('/register', async (req, res) => {
   }
 });
 
-
-
-
 // LOGIN
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
+   console.log('Login request body:', req.body);
 
   try {
     const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
@@ -136,26 +132,21 @@ app.post('/login', async (req, res) => {
       { expiresIn: '1h' }
     );
 
-
-res.json({
-  message: 'Login successful',
-  token,
-  username: user.username,
-  email: user.email,
-  is_admin: user.is_admin,
-  role: user.is_admin === 1 ? 'admin' : 'user',
-  isAdmin: user.is_admin === 1
-});
-
+    res.json({
+      message: 'Login successful',
+      token,
+      username: user.username,
+      email: user.email,
+      is_admin: user.is_admin,
+      role: user.is_admin === 1 ? 'admin' : 'user',
+      isAdmin: user.is_admin === 1
+    });
 
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
-
-
-
 
 async function logUserAction(userId, action) {
   try {
@@ -164,8 +155,6 @@ async function logUserAction(userId, action) {
     console.error('Failed to log user action:', err);
   }
 }
-
-
 
 // TASK ROUTE
 
@@ -184,7 +173,6 @@ app.get('/tasks', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Database error' });
   }
 });
-
 
 // create/add task
 app.post('/tasks', authenticateToken, async (req, res) => {
@@ -256,9 +244,7 @@ app.delete('/tasks/:id', authenticateToken, async (req, res) => {
   }
 });
 
-
 //  ADMIN 
-
 
 // Middleware to check admin access
 function isAdmin(req, res, next) {
@@ -270,125 +256,106 @@ function isAdmin(req, res, next) {
 }
 
 // Get all users (admin only)
-// app.get('/admin/users', authenticateToken, isAdmin, async (req, res) => {
-//   try {
-//     const [users] = await db.query(
-//       'SELECT id, username, email, is_blocked FROM users'
-//     );
+app.get('/admin/users', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const [users] = await db.query(
+      'SELECT id, username, email, is_blocked FROM users'
+    );
 
-//     res.json(users);
+    res.json(users);
 
-//   } catch (err) {
-//     console.error('Database error:', err);
-//     res.status(500).json({ error: 'Failed to fetch users' });
-//   }
-// });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
 
+// Block or unblock user (admin only)
+app.put('/admin/block/:id', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const { block } = req.body;
 
-// // Block or unblock user (admin only)
-// app.put('/admin/block/:id', authenticateToken, isAdmin, async (req, res) => {
-//   try {
-//     const { block } = req.body;
+    if (typeof block !== 'boolean') {
+      return res.status(400).json({ error: '`block` must be boolean (true or false)' });
+    }
 
-//     if (typeof block !== 'boolean') {
-//       return res.status(400).json({ error: '`block` must be boolean (true or false)' });
-//     }
+    if (parseInt(req.params.id) === req.user.id) {
+      return res.status(400).json({ error: 'You cannot block yourself' });
+    }
 
-//     if (parseInt(req.params.id) === req.user.id) {
-//       return res.status(400).json({ error: 'You cannot block yourself' });
-//     }
+    const [result] = await db.query(
+      'UPDATE users SET is_blocked = ? WHERE id = ?',
+      [block, req.params.id]
+    );
 
-//     const [result] = await db.query(
-//       'UPDATE users SET is_blocked = ? WHERE id = ?',
-//       [block, req.params.id]
-//     );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-//     if (result.affectedRows === 0) {
-//       return res.status(404).json({ message: 'User not found' });
-//     }
+    await logUserAction(req.user.id, `${block ? 'Blocked' : 'Unblocked'} user with ID ${req.params.id}`);
 
-//     await logUserAction(req.user.id, `${block ? 'Blocked' : 'Unblocked'} user with ID ${req.params.id}`);
+    res.json({ message: block ? 'User blocked' : 'User unblocked' });
+  } catch (err) {
+    console.error('Database error:', err);
+    res.status(500).json({ error: 'Failed to update user block status' });
+  }
+});
 
-//     res.json({ message: block ? 'User blocked' : 'User unblocked' });
-//   } catch (err) {
-//     console.error('Database error:', err);
-//     res.status(500).json({ error: 'Failed to update user block status' });
-//   }
-// });
+app.post('/auth/logout', authenticateToken, (req, res) => {
+  // Optionally implement token invalidation
+  res.json({ message: 'Logged out successfully (client must delete token)' });
+});
 
-
-// app.post('/auth/logout', authenticateToken, (req, res) => {
-//   // Optionally implement token invalidation
-//   res.json({ message: 'Logged out successfully (client must delete token)' });
-// });
-
-
-// // Admin: Get app metrics
-// app.get('/admin/metrics', authenticateToken, isAdmin, async (req, res) => {
-//   try {
-//     // Total users and tasks
-//     const [[{ userCount }]] = await db.query('SELECT COUNT(*) AS userCount FROM users');
-//     const [[{ taskCount }]] = await db.query('SELECT COUNT(*) AS taskCount FROM tasks');
-
-//     // Tasks grouped by status
-//     const [taskStatusCounts] = await db.query(
-//       'SELECT status, COUNT(*) AS count FROM tasks GROUP BY status'
-//     );
-
-//     // Recent actions (last 10)
-//     const [recentActions] = await db.query(`
-//       SELECT u.username, ua.action, ua.timestamp
-//       FROM user_actions ua
-//       JOIN users u ON ua.user_id = u.id
-//       ORDER BY ua.timestamp DESC
-//       LIMIT 10
-//     `);
-
-//     res.json({
-//       userCount,
-//       taskCount,
-//       taskStatusCounts,
-//       recentActions
-//     });
-//   } catch (err) {
-//     console.error('Failed to fetch metrics:', err);
-//     res.status(500).json({ error: 'Failed to fetch app metrics' });
-//   }
-// });
-
-
-// app.get('/admin/user-actions', authenticateToken, isAdmin, async (req, res) => {
-//   try {
-//     const [logs] = await db.query(`
-//       SELECT ua.id, u.username, ua.action, ua.timestamp
-//       FROM user_actions ua
-//       JOIN users u ON ua.user_id = u.id
-//       ORDER BY ua.timestamp DESC
-//       LIMIT 50
-//     `);
-
-//     res.json(logs);
-//   } catch (err) {
-//     console.error('Error fetching user actions:', err);
-//     res.status(500).json({ error: 'Failed to fetch user actions' });
-//   }
-// });
-
+// Admin: Get app metrics
 app.get('/admin/metrics', authenticateToken, isAdmin, async (req, res) => {
   try {
+    // Total users and tasks
     const [[{ userCount }]] = await db.query('SELECT COUNT(*) AS userCount FROM users');
     const [[{ taskCount }]] = await db.query('SELECT COUNT(*) AS taskCount FROM tasks');
 
-    res.json({ userCount, taskCount });
+    // Tasks grouped by status
+    const [taskStatusCounts] = await db.query(
+      'SELECT status, COUNT(*) AS count FROM tasks GROUP BY status'
+    );
+
+    // Recent actions (last 10)
+    const [recentActions] = await db.query(`
+      SELECT u.username, ua.action, ua.timestamp
+      FROM user_actions ua
+      JOIN users u ON ua.user_id = u.id
+      ORDER BY ua.timestamp DESC
+      LIMIT 10
+    `);
+
+    res.json({
+      userCount,
+      taskCount,
+      taskStatusCounts,
+      recentActions
+    });
   } catch (err) {
     console.error('Failed to fetch metrics:', err);
     res.status(500).json({ error: 'Failed to fetch app metrics' });
   }
 });
 
+app.get('/admin/user-actions', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const [logs] = await db.query(`
+      SELECT ua.id, u.username, ua.action, ua.timestamp
+      FROM user_actions ua
+      JOIN users u ON ua.user_id = u.id
+      ORDER BY ua.timestamp DESC
+      LIMIT 50
+    `);
+
+    res.json(logs);
+  } catch (err) {
+    console.error('Error fetching user actions:', err);
+    res.status(500).json({ error: 'Failed to fetch user actions' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
-
-

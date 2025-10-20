@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -35,6 +35,7 @@
     const msgEl = document.getElementById('loginMessage');
     const loginBtn = document.getElementById('loginBtn');
 
+    // Clear previous message
     msgEl.innerText = '';
     msgEl.style.color = '';
 
@@ -42,10 +43,9 @@
     loginBtn.textContent = 'Logging in...';
 
     try {
-      const resp = await fetch('http://localhost:3001/login', {
+      const resp = await fetch('http://localhost:5500/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }, 
-        credentials: 'include', 
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
@@ -66,13 +66,13 @@
         msgEl.style.color = 'green';
         msgEl.innerText = data.message || 'Login successful';
 
-        // Store token & user info for future requests
+        // Store token & user info
         localStorage.setItem('token', data.token);
         localStorage.setItem('username', data.username || '');
         localStorage.setItem('email', data.email || '');
         localStorage.setItem('role', data.is_admin === 1 ? 'admin' : 'user');
 
-        // Redirect user after a short delay
+        // Redirect based on role
         setTimeout(() => {
           if (data.is_admin === 1) {
             window.location.href = 'admin.html';
@@ -83,6 +83,8 @@
       }
 
       console.log('Login response:', data);
+     console.log('is_admin:', data.is_admin);
+
     } catch (err) {
       msgEl.style.color = 'red';
       msgEl.innerText = err.message || 'Something went wrong.';
@@ -93,7 +95,13 @@
   });
 </script>
 </body>
-</html>
+</html> 
+
+
+
+
+
+
 
 
 
@@ -171,7 +179,6 @@
       }
     });
   </script> -->
-
 
 
 

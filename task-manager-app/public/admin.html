@@ -38,7 +38,7 @@
     window.location.href = 'login.html';
   }
 
-  const API_URL = 'http://localhost:3000';
+  const API_URL = 'http://localhost:5500';
 
   const messageDiv = document.getElementById('message');
   const usersTableBody = document.querySelector('#users-table tbody');
@@ -108,15 +108,28 @@
     }
 
     try {
-      const res = await fetch(`${API_URL}/admin/block/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        credentials: 'include', 
-        body: JSON.stringify({ block }),
-      });
+      // const res = await fetch(`${API_URL}/admin/block/${userId}`, {
+      //   method: 'PUT',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'Authorization': `Bearer ${token}`,
+      //   },
+      //   credentials: 'include', 
+      //   body: JSON.stringify({ block }),
+      // });
+       const res = await fetch(`${API_URL}/admin/block/${userId}`, {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  },
+  // Remove credentials for now:
+  // credentials: 'include',
+  body: JSON.stringify({ block }),
+});
+
+
+
 
       const data = await res.json();
 
