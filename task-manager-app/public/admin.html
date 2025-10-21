@@ -3,152 +3,292 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin dashboard</title>
+  <title>Admin Dashboard</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="admin-panel">
-      <h1>Admin Dashboard</h1>
+    <div class="admin-panel">
+       <h1>Admin Dashboard</h1>
+       <button id="logoutBtn" class="btn">Logout</button>
+    </div>
 
-      <table id="users-table">
-        <thead>
-        <tr>
-        <th>ID</th>
-        <th>Username</th>
-        <th>Email</th>
-        <th>Blocked</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
+    <div class="admin-panel-flex">
+      <div class="right-container">
+      <section id="metrics-section">
+      <h2>Metrics</h2>
+      <div id="metrics">Loading metrics...</div>
+     </section>
+     </div>
 
-    </tbody>
-  </table>
-
-  <div id="message"></div>
+  <!-- Recent Actions Section -->
+  <div class="right-container">
+    <section id="actions-section">
+      <h2>Recent Actions</h2>
+      <ul id="actions-list"></ul>
+    </section>
   </div>
 
-<script>
-  // Check token and role BEFORE doing anything else
-  const token = localStorage.getItem('token'); 
-  const role = localStorage.getItem('role');
+    </div>
 
-  if (!token || role !== 'admin') {
-    alert('Access denied. You must be an admin to view this page.');
-    window.location.href = 'login.html';
-  }
+    <div class="admin-panel">
 
-  const API_URL = 'http://localhost:5500';
+    <!--  User Management Table -->
+    <h2>All Users</h2>
+    <table id="users-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
-  const messageDiv = document.getElementById('message');
-  const usersTableBody = document.querySelector('#users-table tbody');
+    <div id="message"></div>
+  </div>
 
-  function showMessage(text, type = 'success') {
-    messageDiv.textContent = text;
-    messageDiv.className = '';
-    messageDiv.classList.add(type === 'success' ? 'success' : 'error');
-    messageDiv.style.display = 'block';
-    setTimeout(() => {
-      messageDiv.style.display = 'none';
-    }, 3000);
-  }
+  <!-- Confirmation Modal -->
+  <div id="confirm-modal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <p id="confirm-text"></p>
+      <button id="confirm-yes">Yes</button>
+      <button id="confirm-no">Cancel</button>
+    </div>
+    </div>
 
-  async function fetchUsers() {
-    try {
-      const res = await fetch(`${API_URL}/admin/users`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+
+    <!-- Remove Task Modal -->
+<div id="remove-task-modal" class="modal hidden">
+  <div class="modal-content">
+    <span class="close" id="closeRemoveModal">&times;</span>
+    <p id="remove-task-text">Are you sure you want to remove this task?</p>
+    <form id="remove-task-form">
+      <input type="hidden" id="remove-task-id" />
+      <button type="submit" class="btn danger">Remove Task</button>
+      <button type="button" id="cancelRemoveTask">Cancel</button>
+    </form>
+  </div>
+</div>
+
+  
+
+  <script>
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+
+    if (!token || role !== 'admin') {
+      alert('Access denied. You must be an admin to view this page.');
+      window.location.href = 'login.html';
+    }
+
+    const API_URL = 'http://localhost:5500';
+    const messageDiv = document.getElementById('message');
+    const usersTableBody = document.querySelector('#users-table tbody');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    function showMessage(text, type = 'success') {
+      messageDiv.textContent = text;
+      messageDiv.className = '';
+      messageDiv.classList.add(type === 'success' ? 'success' : 'error');
+      messageDiv.style.display = 'block';
+      setTimeout(() => {
+        messageDiv.style.display = 'none';
+      }, 3000);
+    }
+
+    async function fetchUsers() {
+      try {
+        const res = await fetch(`${API_URL}/admin/users`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error(`Failed to load users: ${res.statusText}`);
+
+        const users = await res.json();
+        renderUsers(users);
+      } catch (err) {
+        showMessage(err.message, 'error');
+      }
+    }
+
+    function renderUsers(users) {
+      usersTableBody.innerHTML = '';
+
+      users.forEach(user => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${user.id}</td>
+          <td>${user.username}</td>
+          <td>${user.email}</td>
+          <td>${user.is_blocked ? 'Blocked' : 'Active'}</td>
+          <td>
+            <button 
+              class="${user.is_blocked ? 'unblock' : 'block'}" 
+              data-userid="${user.id}" 
+              data-username="${user.username}">
+              ${user.is_blocked ? 'Unblock' : 'Block'}
+            </button>
+          </td>
+        `;
+        usersTableBody.appendChild(tr);
       });
 
-      if (!res.ok) {
-        throw new Error(`Failed to load users: ${res.statusText}`);
-      }
-
-      const users = await res.json();
-      renderUsers(users);
-    } catch (err) {
-      showMessage(err.message, 'error');
+      document.querySelectorAll('button.block, button.unblock').forEach(button => {
+        button.addEventListener('click', handleBlockUnblock);
+      });
     }
-  }
 
-  function renderUsers(users) {
-    usersTableBody.innerHTML = '';
+    function showConfirmModal(message) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal');
+        const text = document.getElementById('confirm-text');
+        const yesBtn = document.getElementById('confirm-yes');
+        const noBtn = document.getElementById('confirm-no');
+        const closeBtn = document.getElementById('closeModal');
 
-    users.forEach(user => {
-      const tr = document.createElement('tr');
+        text.textContent = message;
+        modal.classList.remove('hidden');
 
-      tr.innerHTML = `
-        <td>${user.id}</td>
-        <td>${user.username}</td>
-        <td>${user.email}</td>
-        <td>${user.is_blocked ? 'Yes' : 'No'}</td>
-        <td>
-          <button class="${user.is_blocked ? 'unblock' : 'block'}" data-userid="${user.id}">
-            ${user.is_blocked ? 'Unblock' : 'Block'}
-          </button>
-        </td>
-      `;
+        const cleanup = () => {
+          modal.classList.add('hidden');
+          yesBtn.removeEventListener('click', onYes);
+          noBtn.removeEventListener('click', onNo);
+          closeBtn.removeEventListener('click', onClose);
+        };
 
-      usersTableBody.appendChild(tr);
+        const onYes = () => { cleanup(); resolve(true); };
+        const onNo = () => { cleanup(); resolve(false); };
+        const onClose = () => { cleanup(); resolve(false); };
+
+        yesBtn.addEventListener('click', onYes);
+        noBtn.addEventListener('click', onNo);
+        closeBtn.addEventListener('click', onClose);
+      });
+    }
+
+    async function handleBlockUnblock(event) {
+      const button = event.target;
+      const userId = button.getAttribute('data-userid');
+      const username = button.getAttribute('data-username') || 'this user';
+      const block = button.classList.contains('block');
+      const action = block ? 'block' : 'unblock';
+
+      const confirmed = await showConfirmModal(`Are you sure you want to ${action} ${username}?`);
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(`${API_URL}/admin/block/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ block }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || data.message || 'Failed to update user');
+
+        showMessage(data.message, 'success');
+        fetchUsers(); 
+        fetchRecentActions(); 
+      } catch (err) {
+        showMessage(err.message, 'error');
+      }
+    }
+
+    //  Fetch and display metrics
+    async function fetchMetrics() {
+      try {
+        const res = await fetch(`${API_URL}/admin/metrics`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error('Failed to load metrics');
+        const data = await res.json();
+        const metricsDiv = document.getElementById('metrics');
+
+        metricsDiv.innerHTML = `
+          <p><strong>Total Users:</strong> ${data.userCount}</p>
+          <p><strong>Total Tasks:</strong> ${data.taskCount}</p>
+          <h4>Tasks by Status:</h4>
+          <ul>
+            ${data.taskStatusCounts.map(s => `<li>${s.status}: ${s.count}</li>`).join('')}
+          </ul>
+        `;
+      } catch (err) {
+        showMessage('Error loading metrics: ' + err.message, 'error');
+      }
+    }
+
+    // Fetch recent actions
+    async function fetchRecentActions() {
+      try {
+        const res = await fetch(`${API_URL}/admin/user-actions`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error('Failed to load actions');
+        const actions = await res.json();
+        const list = document.getElementById('actions-list');
+        list.innerHTML = '';
+
+        actions.forEach(log => {
+          const li = document.createElement('li');
+          li.textContent = `${log.username} → ${log.action} @ ${new Date(log.timestamp).toLocaleString()}`;
+          list.appendChild(li);
+        });
+      } catch (err) {
+        showMessage('Error loading actions: ' + err.message, 'error');
+      }
+    }
+
+    //  Logout
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
+      window.location.href = 'login.html';
     });
 
-    document.querySelectorAll('button.block, button.unblock').forEach(button => {
-      button.addEventListener('click', handleBlockUnblock);
-    });
-  }
-
-  async function handleBlockUnblock(event) {
-    const button = event.target;
-    const userId = button.getAttribute('data-userid');
-    const block = button.classList.contains('block');
-
-    if (!confirm(`Are you sure you want to ${block ? 'block' : 'unblock'} this user?`)) {
-      return;
-    }
-
-    try {
-      // const res = await fetch(`${API_URL}/admin/block/${userId}`, {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${token}`,
-      //   },
-      //   credentials: 'include', 
-      //   body: JSON.stringify({ block }),
-      // });
-       const res = await fetch(`${API_URL}/admin/block/${userId}`, {
-  method: 'PUT',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
-  },
-  // Remove credentials for now:
-  // credentials: 'include',
-  body: JSON.stringify({ block }),
-});
-
-
-
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || data.message || 'Failed to update user');
-      }
-
-      showMessage(data.message);
-      fetchUsers();
-    } catch (err) {
-      showMessage(err.message, 'error');
-    }
-  }
-
-  // Initial load
-  fetchUsers();
-</script>
+    //  Init
+    fetchUsers();
+    fetchMetrics();
+    fetchRecentActions();
+  </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
 
 
 
