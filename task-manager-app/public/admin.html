@@ -7,10 +7,12 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div class="admin-panel">
+      <div class="admin-panel">
        <h1>Admin Dashboard</h1>
-       <button id="logoutBtn" class="btn">Logout</button>
-    </div>
+        <button id="logoutBtn" class="btn">Logout</button>
+     </div>
+
+ <div class="admin-panel">
 
     <div class="admin-panel-flex">
       <div class="right-container">
@@ -74,7 +76,7 @@
   </div>
 </div>
 
-  
+   </div> 
 
   <script>
     const token = localStorage.getItem('token');
@@ -225,34 +227,49 @@
       }
     }
 
-    // Fetch recent actions
     async function fetchRecentActions() {
-      try {
-        const res = await fetch(`${API_URL}/admin/user-actions`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+  try {
+    const res = await fetch(`${API_URL}/admin/user-actions`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
 
-        if (!res.ok) throw new Error('Failed to load actions');
-        const actions = await res.json();
-        const list = document.getElementById('actions-list');
-        list.innerHTML = '';
+    if (!res.ok) throw new Error('Failed to load actions');
 
-        actions.forEach(log => {
-          const li = document.createElement('li');
-          li.textContent = `${log.username} → ${log.action} @ ${new Date(log.timestamp).toLocaleString()}`;
-          list.appendChild(li);
-        });
-      } catch (err) {
-        showMessage('Error loading actions: ' + err.message, 'error');
-      }
+    const actions = await res.json();
+    const list = document.getElementById('actions-list');
+    list.innerHTML = '';
+
+    const now = Date.now();
+    const twentyFourHoursAgo = now - (24 * 60 * 60 * 1000); 
+
+    // Filter actions from last 24 hours
+    const recentActions = actions.filter(log => {
+      const actionTime = new Date(log.timestamp).getTime();
+      return actionTime >= twentyFourHoursAgo;
+    });
+
+    if (recentActions.length === 0) {
+      list.innerHTML = '<li>No actions in the last 24 hours.</li>';
+      return;
     }
+
+    recentActions.forEach(log => {
+      const li = document.createElement('li');
+      li.textContent = `${log.username} → ${log.action} @ ${new Date(log.timestamp).toLocaleString()}`;
+      list.appendChild(li);
+    });
+  } catch (err) {
+    showMessage('Error loading actions: ' + err.message, 'error');
+  }
+}
+
 
     //  Logout
     logoutBtn.addEventListener('click', () => {
       localStorage.removeItem('token');
       localStorage.removeItem('username');
       localStorage.removeItem('role');
-      window.location.href = 'login.html';
+      window.location.href = 'home.html';
     });
 
     //  Init
@@ -262,6 +279,98 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
 
 
 
