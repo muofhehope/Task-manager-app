@@ -63,6 +63,7 @@ main {
   margin-top: 3rem;
   max-width: 800px;
   text-align: center;
+  margin-bottom: 35px;
 }
 
 .features h2 {
@@ -96,7 +97,6 @@ footer {
   color: #ccc;
   text-align: center;
   padding: 1rem;
-  margin-top: 15px;
 } 
 
 
@@ -429,6 +429,10 @@ a.login:hover {
   justify-content: center;
   align-items: center;
   z-index: 1000;
+}
+
+.dashboard-modal.show {
+  display: flex;
 }
 
 
