@@ -225,6 +225,7 @@ textarea {
   margin-bottom: 15px;
   border: 1px solid #ccc;
   border-radius: 5px;
+  font-size: 15px;
 }
 
 input:focus,
@@ -235,7 +236,6 @@ textarea:focus {
 
 /* Button Styles */
 button {
-  display: block;
   padding: 5px 20px;
   font-size: 16px;
   color: white;
@@ -243,7 +243,7 @@ button {
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  margin-top: 0px;
+  margin-top: 10px;
 
 }
 
@@ -275,7 +275,7 @@ button.unblock {
 }
 
 #confirm-yes, #confirm-no {
-  display:inline-block ;
+display: inline-flex;
   margin-right: 10px;
 }
 
@@ -393,6 +393,11 @@ button.unblock {
   color: #721c24;
 }
 
+#edit_status {
+  margin-bottom: 30px;
+}
+
+
 /* Table Styles */
 table {
   width: 100%;
@@ -452,11 +457,13 @@ a.login:hover {
   background: white;
   padding: 20px;
   border-radius: 8px;
-  max-width: 400px;
+  max-width: 600px;
   width: 90%;
-  text-align: center;
+  /* text-align: center; */
 }
- 
+
+
+
 
 .hidden {
   display: none;
@@ -538,6 +545,20 @@ a.login:hover {
   display: block;
 }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
