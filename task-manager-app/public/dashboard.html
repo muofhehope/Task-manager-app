@@ -216,36 +216,6 @@ window.addEventListener('keydown', (e) => {
 });
 
 // UPDATE TASK 
-// editForm.addEventListener('submit', async (e) => {
-//   e.preventDefault();
-//   const id = document.getElementById('edit_id').value;
-//   const updatedTask = {
-//     title: document.getElementById('edit_title').value,
-//     description: document.getElementById('edit_description').value,
-//     due_date: document.getElementById('edit_due_date').value,
-//     status: document.getElementById('edit_status').value
-//   };
-
-//   try {
-//     const res = await fetch(`http://localhost:5500/tasks/${id}`, {
-//       method: 'PUT',
-//       headers: {
-//         'Content-Type': 'application/json',
-//         'Authorization': 'Bearer ' + token
-//       },
-//       body: JSON.stringify(updatedTask)
-//     });
-
-//     if (res.ok) {
-//       closeEditModal();
-//       loadTasks();
-//     } else {
-//       alert('Failed to update task');
-//     }
-//   } catch (err) {
-//     alert('Server error while updating task');
-//   }
-// });
 editForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -268,8 +238,8 @@ editForm.addEventListener('submit', async (e) => {
         });
 
         if (res.ok) {
-            editModal.classList.remove('show'); // close modal
-            loadTasks(); // refresh tasks
+            editModal.classList.remove('show');
+            loadTasks(); 
         } else {
             const errorData = await res.json();
             console.error('Update error:', errorData);

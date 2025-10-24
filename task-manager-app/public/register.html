@@ -64,37 +64,4 @@
   </script>
 </body>
 </html>
-  <!-- <script>
-    const form = document.getElementById('registerForm');
-    const message = document.getElementById('message');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const data = Object.fromEntries(new FormData(form).entries());
-
-      if (data.password !== data.retype_password) {
-        message.textContent = 'Passwords do not match';
-        return;
-      }
-
-      try {
-        const res = await fetch('http://localhost:3000/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-
-        const result = await res.json();
-        message.textContent = result.message;
-
-        if (res.ok) {
-          form.reset();
-        }
-
-      } catch (err) {
-        message.textContent = 'Server error during registration.';
-      }
-    });
-  </script> -->
-    
+ 

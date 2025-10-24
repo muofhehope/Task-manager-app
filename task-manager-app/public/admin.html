@@ -242,7 +242,6 @@
     const now = Date.now();
     const twentyFourHoursAgo = now - (24 * 60 * 60 * 1000); 
 
-    // Filter actions from last 24 hours
     const recentActions = actions.filter(log => {
       const actionTime = new Date(log.timestamp).getTime();
       return actionTime >= twentyFourHoursAgo;
