@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taskmanager-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: taskmanager
+  template:
+    metadata:
+      labels:
+        app: taskmanager
+    spec:
+      containers:
+        - name: taskmanager
+          image: taskmanager:1.0
+          ports:
+            - containerPort: 5500
+          env:
+            - name: DB_HOST
+              value: "mysql-service"
+            - name: DB_USER
+              value: "root"
+            - name: DB_PASSWORD
+              value: "Muofhe@1407@22"
+            - name: DB_NAME
+              value: "taskmanager"
+            - name: PORT
+              value: "5500"
+            - name: JWT_SECRET
+              value: "my_secret"
